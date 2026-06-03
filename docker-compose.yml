@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ${GEMINI_HISTORY_PATH:-~/.gemini/tmp}:/root/.gemini/tmp
+    environment:
+      - GEMINI_TMP_DIR=/root/.gemini/tmp
+      - PORT=3001
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3001
+    depends_on:
+      - backend

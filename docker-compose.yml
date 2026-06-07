@@ -4,6 +4,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
+      # Use ${HOME} to resolve to /Users/... on macOS and /home/... on Ubuntu
       - ${GEMINI_HISTORY_PATH:-${HOME}/.gemini/tmp}:/root/.gemini/tmp
     environment:
       - GEMINI_TMP_DIR=/root/.gemini/tmp

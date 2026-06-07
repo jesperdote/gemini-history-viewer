@@ -79,7 +79,8 @@ app.get('/api/projects/:projectId/sessions/:sessionId', async (req, res) => {
     let history = [];
 
     try {
-      // Try parsing as a single JSON object (new format)
+      // Try parsing as a single JSON object (new macOS format)
+      // Recent versions of Gemini CLI store sessions as a single JSON object with a 'messages' array
       const data = JSON.parse(content);
       if (data.messages && Array.isArray(data.messages)) {
         history = data.messages.map(msg => {
@@ -106,7 +107,8 @@ app.get('/api/projects/:projectId/sessions/:sessionId', async (req, res) => {
         });
       }
     } catch (e) {
-      // Fallback to line-by-line parsing (JSONL format)
+      // Fallback to line-by-line parsing (legacy Ubuntu/JSONL format)
+      // Older versions or specific configurations use JSONL where each line is a message object
       const lines = content.split('\n').filter(line => line.trim());
       for (const line of lines) {
         try {

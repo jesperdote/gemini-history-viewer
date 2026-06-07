@@ -21,13 +21,19 @@ app.get('/api/projects', async (req, res) => {
     const projects = [];
 
     for (const entry of entries) {
+      if (entry === 'bin') continue;
+      
       const projectPath = path.join(GEMINI_TMP_DIR, entry);
       const stat = await fs.stat(projectPath);
+      
       if (stat.isDirectory()) {
-        projects.push({
-          id: entry,
-          path: projectPath
-        });
+        const chatsPath = path.join(projectPath, 'chats');
+        if (await fs.pathExists(chatsPath)) {
+          projects.push({
+            id: entry,
+            path: projectPath
+          });
+        }
       }
     }
     res.json(projects);
@@ -70,37 +76,65 @@ app.get('/api/projects/:projectId/sessions/:sessionId', async (req, res) => {
     }
     
     const content = await fs.readFile(sessionPath, 'utf8');
-    const lines = content.split('\n').filter(line => line.trim());
-    
-    const history = [];
-    let currentTurn = { turns: [] };
-    
-    for (const line of lines) {
-      try {
-        const data = JSON.parse(line);
-        
-        if (data.type === 'user') {
-          const userContent = Array.isArray(data.content) 
-            ? data.content.map(c => c.text).join('\n')
-            : data.content;
-            
-          history.push({
-            type: 'user',
-            content: userContent,
-            timestamp: data.timestamp
-          });
-        } else if (data.type === 'gemini') {
-          history.push({
-            type: 'gemini',
-            content: data.content,
-            thoughts: data.thoughts,
-            toolCalls: data.toolCalls,
-            model: data.model,
-            timestamp: data.timestamp
-          });
+    let history = [];
+
+    try {
+      // Try parsing as a single JSON object (new macOS format)
+      // Recent versions of Gemini CLI store sessions as a single JSON object with a 'messages' array
+      const data = JSON.parse(content);
+      if (data.messages && Array.isArray(data.messages)) {
+        history = data.messages.map(msg => {
+          if (msg.type === 'user') {
+            const userContent = Array.isArray(msg.content)
+              ? msg.content.map(c => c.text).join('\n')
+              : msg.content;
+            return {
+              type: 'user',
+              content: userContent,
+              timestamp: msg.timestamp
+            };
+          } else if (msg.type === 'gemini') {
+            return {
+              type: 'gemini',
+              content: msg.content,
+              thoughts: msg.thoughts,
+              toolCalls: msg.toolCalls,
+              model: msg.model,
+              timestamp: msg.timestamp
+            };
+          }
+          return msg;
+        });
+      }
+    } catch (e) {
+      // Fallback to line-by-line parsing (legacy Ubuntu/JSONL format)
+      // Older versions or specific configurations use JSONL where each line is a message object
+      const lines = content.split('\n').filter(line => line.trim());
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          if (data.type === 'user') {
+            const userContent = Array.isArray(data.content)
+              ? data.content.map(c => c.text).join('\n')
+              : data.content;
+            history.push({
+              type: 'user',
+              content: userContent,
+              timestamp: data.timestamp
+            });
+          } else if (data.type === 'gemini') {
+            history.push({
+              type: 'gemini',
+              content: data.content,
+              thoughts: data.thoughts,
+              toolCalls: data.toolCalls,
+              model: data.model,
+              timestamp: data.timestamp
+            });
+          }
+        } catch (lineError) {
+          console.error('Error parsing line:', line, lineError);
         }
-      } catch (e) {
-        console.error('Error parsing line:', line, e);
       }
     }
     

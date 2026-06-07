@@ -12,12 +12,11 @@ A web-based viewer for your Gemini CLI history.
 
 Ensure you have Docker and Docker Compose installed.
 
-1.  **Clone or create the project files** (you've already done this if you're reading this).
-2.  **Run with Docker Compose**:
+1.  **Run with Docker Compose**:
     ```bash
     docker compose up --build
     ```
-3.  **Access the viewer**:
+2.  **Access the viewer**:
     Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Configuration
@@ -27,4 +26,3 @@ The application mounts your local Gemini history directory (`~/.gemini/tmp`) int
 ```env
 GEMINI_HISTORY_PATH=/path/to/your/.gemini/tmp
 ```
-# gemini-history-viewer

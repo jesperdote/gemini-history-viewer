@@ -4,7 +4,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ${GEMINI_HISTORY_PATH:-~/.gemini/tmp}:/root/.gemini/tmp
+      - ${GEMINI_HISTORY_PATH:-${HOME}/.gemini/tmp}:/root/.gemini/tmp
     environment:
       - GEMINI_TMP_DIR=/root/.gemini/tmp
       - PORT=3001
